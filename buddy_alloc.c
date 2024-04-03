@@ -214,46 +214,4 @@ static bool try_coalesce(bd_region_t *const region)
 
 #include <stdlib.h>
 #include <time.h>
-#define DEPTH 16ul
 
-char memory[MINIMAL_REGION_SIZE << DEPTH];
-
-int main(void)
-{
-    printf("header size: %zu\n", sizeof(bd_header_t));
-    printf("memory size over depth = %zu -> %zu\n", DEPTH, sizeof(memory));
-
-    bd_allocator_t allocator;
-
-    bd_place(&allocator, DEPTH, memory);
-    // divide_all(allocator.head);
-
-    char *block;
-    size_t max_size = 4000;
-    size_t min_size = 16;
-    size_t i = 0;
-    srand(100);
-    while (max_size > min_size)
-    {
-        do
-        {
-            size_t size = rand() % (max_size + 1 - min_size) + min_size;
-            block = bd_alloc(&allocator, size);
-            ++i;
-        }
-        while (block);
-        max_size >>= 1;
-    }
-
-    size_t count_arr[DEPTH] = {0};
-    size_t total_blocks = 0;
-    size_t total_memory = 0;
-    bd_allocd_count(&allocator, DEPTH, count_arr, &total_blocks, &total_memory);
-    printf("allocd blocks in total: %zu \n", total_blocks);
-    printf("allocd memory in total: %zu \n", total_memory);
-
-
-
-
-    return 0;
-}
