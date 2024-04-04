@@ -33,6 +33,7 @@ static size_t ceiled_pow2(const size_t size);
 static size_t ul_log2(size_t size);
 static void divide_region(bd_region_t *const region);
 static bool try_coalesce(bd_region_t *const region);
+static void divide_all(bd_region_t *head);
 
 
 void bd_place(bd_allocator_t *allocator, size_t depth, void *memory)
@@ -51,6 +52,7 @@ void* bd_alloc(const bd_allocator_t *const allocator, const size_t req_size)
     bd_region_t *region = allocator->head;
 
     const size_t aligned_size = align_to_minimal_region(req_size + sizeof(bd_header_t));
+    assert(aligned_size > req_size);
 
     const char *end = (char*) region + allocator->arena_size;
 
@@ -94,9 +96,10 @@ void bd_free(const bd_allocator_t *const allocator, void *const ptr)
 {
     assert(allocator);
     assert(ptr);
+    assert(ptr < (void*)((char*)allocator->head + allocator->arena_size));
 
     bd_region_t *region = (bd_region_t*)((char*)ptr - offsetof(bd_region_t, memory));
-    assert(region->header.state == BD_REGION_USED && "double free.");
+    assert((region->header.state == BD_REGION_USED) && "double free.");
     region->header.state = BD_REGION_FREE;
 }
 
@@ -127,24 +130,10 @@ void bd_allocd_count(const bd_allocator_t *const allocator, const size_t depth, 
 }
 
 
-void divide_all(bd_region_t *head)
-{
-    const size_t new_region_size = head->header.size >> 1;
-    if (new_region_size < MINIMAL_REGION_SIZE) return;
-
-    head->header.size = new_region_size;
-
-    bd_region_t *next = (bd_region_t*) ((char*)head + head->header.size);
-    next->header.size = new_region_size;
-
-    divide_all(head);
-    divide_all(next);
-}
-
-
 static size_t align_to_minimal_region(const size_t size)
 {
-    size_t aligned_to_min_region = ((size + MINIMAL_REGION_SIZE - 1) / MINIMAL_REGION_SIZE * MINIMAL_REGION_SIZE);
+    size_t aligned_to_min_region = ((size + MINIMAL_REGION_SIZE - 1)
+            / MINIMAL_REGION_SIZE * MINIMAL_REGION_SIZE);
     return ceiled_pow2(aligned_to_min_region);
 }
 
@@ -179,12 +168,17 @@ static size_t ul_log2(size_t size)
 static void divide_region(bd_region_t *const region)
 {
     assert(region->header.size > 0);
-    const size_t new_region_size = region->header.size >> 1;
+    assert(BD_REGION_FREE == region->header.state);
+
+    const uint32_t new_region_size = region->header.size >> 1;
     region->header.size = new_region_size;
 
     bd_region_t *next = (bd_region_t*) ((char*)region + region->header.size);
-    next->header.size = new_region_size;
-    assert(next->header.size > 0);
+
+    next->header = (bd_header_t){
+        .state = BD_REGION_FREE,
+        .size = new_region_size,
+    };
 }
 
 
@@ -192,8 +186,10 @@ static bool try_coalesce(bd_region_t *const region)
 {
     bd_region_t *next = (bd_region_t*) ((char*)region + region->header.size);
 
+    assert(BD_REGION_FREE == region->header.state);
     assert(region->header.size > 0);
     assert(next->header.size > 0);
+    assert(next->header.size <= region->header.size);
 
     if (BD_REGION_USED == next->header.state)
     {
@@ -201,10 +197,12 @@ static bool try_coalesce(bd_region_t *const region)
     }
 
     /* attempt merging next blocks up to the size of a region */
-    if (next->header.size < region->header.size
-        && !try_coalesce(next))
+    if (next->header.size < region->header.size)
     {
-        return false;
+        if (!try_coalesce(next))
+        {
+            return false;
+        }
     }
 
     /* next aligned with region */
@@ -212,6 +210,17 @@ static bool try_coalesce(bd_region_t *const region)
     return true;
 }
 
-#include <stdlib.h>
-#include <time.h>
 
+static void divide_all(bd_region_t *head)
+{
+    const uint32_t new_region_size = head->header.size >> 1;
+    if (new_region_size < MINIMAL_REGION_SIZE) return;
+
+    head->header.size = new_region_size;
+
+    bd_region_t *next = (bd_region_t*) ((char*)head + head->header.size);
+    next->header.size = new_region_size;
+
+    divide_all(head);
+    divide_all(next);
+}
