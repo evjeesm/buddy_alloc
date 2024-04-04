@@ -60,7 +60,7 @@ void* bd_alloc(const bd_allocator_t *const allocator, const size_t req_size)
     {
         const size_t offset = (char*)region - (char*)allocator->head;
         if (offset % aligned_size != 0 /* missaligned*/
-            || region->header.state == BD_REGION_USED) /* or used */
+            || BD_REGION_USED == region->header.state) /* or used */
         {
             /* skip block */
             region = (bd_region_t*)((char*) region + region->header.size);
@@ -197,7 +197,7 @@ static bool try_coalesce(bd_region_t *const region)
     }
 
     /* attempt merging next blocks up to the size of a region */
-    if (next->header.size < region->header.size)
+    while (next->header.size < region->header.size)
     {
         if (!try_coalesce(next))
         {
@@ -205,6 +205,8 @@ static bool try_coalesce(bd_region_t *const region)
         }
     }
 
+    assert(next->header.size == region->header.size);
+    
     /* next aligned with region */
     region->header.size <<= 1;
     return true;

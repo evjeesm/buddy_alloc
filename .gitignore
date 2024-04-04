@@ -1,0 +1,12 @@
+*
+
+
+!*.ac
+!*.am
+!*.c
+!*.h
+!*.sh
+
+!.gitignore
+
+config.h

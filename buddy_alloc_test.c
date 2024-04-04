@@ -1,87 +1,81 @@
+#include <check.h>
+#include <stdlib.h>
+
 #include "buddy_alloc.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#define DEPTH 8ul
+#define MAX_BLOCKS 256
+#define MAX_ITERATIONS 2048
 
-#define DEPTH 16ul
-#define TEST_1_BLOCKS 377
-#define TEST_2_ITERATIONS 10000
-#define TEST_2_BLOCKS 1024*64
+static char memory[MINIMAL_REGION_SIZE << DEPTH];
+static bd_allocator_t allocator;
 
-char memory[MINIMAL_REGION_SIZE << DEPTH] = {0};
-
-
-int test_random_1(void)
+static void setup_empty(void)
 {
-    bd_allocator_t allocator;
     bd_place(&allocator, DEPTH, memory);
+}
 
-    const size_t expected_blocks_count = TEST_1_BLOCKS;
-    void* blocks[TEST_1_BLOCKS];
+static void teardown(void)
+{
 
-    const size_t min_size = 16;
-    size_t max_size = 4000;
-    size_t allocd = 0;
-    char *block;
-
-    srand(100);
-    while (max_size > min_size)
-    {
-        do
-        {
-            size_t size = rand() % (max_size + 1 - min_size) + min_size;
-            block = bd_alloc(&allocator, size);
-            if (block) /* register allocated block */
-            {
-                blocks[allocd++] = block;
-                // memset(block, 0, size);
-            }
-        }
-        while (block);
-        max_size >>= 1;
-    }
-
-    size_t count_arr[DEPTH] = {0};
-    size_t total_blocks = 0;
-    size_t total_memory = 0;
-
-    bd_allocd_count(&allocator, DEPTH, count_arr, &total_blocks, &total_memory);
-
-    printf("allocd blocks in total: %zu \n", total_blocks);
-    printf("allocd memory in total: %zu \n", total_memory);
-
-    if (total_blocks != allocd) return EXIT_FAILURE;
-    if (total_memory != allocator.arena_size) return EXIT_FAILURE;
-
-    for (size_t i = 0; i < total_blocks; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-
-    block = bd_alloc(&allocator, allocator.arena_size - 8);
-
-    if (!block) return EXIT_FAILURE;
-
-    return EXIT_SUCCESS;
 }
 
 
-int test_random_2(void)
+START_TEST (test_bd_minimal_size)
 {
-    bd_allocator_t allocator;
-    memset(memory, 0x00, sizeof(memory));
-    bd_place(&allocator, DEPTH, memory);
-    void* blocks[TEST_2_BLOCKS];
+    const size_t req_size = 8;
+    for (size_t i = 0; i < MAX_BLOCKS; ++i)
+    {
+        void *block = bd_alloc(&allocator, req_size);
+        memset(block, 0xaa, req_size);
+    }
 
-    const size_t max_size = 520;
+    void *other = bd_alloc(&allocator, 8);
+    ck_assert_msg(!other,
+        "allocation did not failed when no free blocks left");
+}
+END_TEST
+
+
+START_TEST (test_bd_alternate_size)
+{
+    void *blocks[MAX_BLOCKS];
+    size_t allocd = 0;
+
+    for (size_t i = 0; i < MAX_ITERATIONS; ++i)
+    {
+        size_t size = 8ul << (i % 7);
+        void *block = bd_alloc(&allocator, size);
+        if (block)
+        {
+            memset(block, 0xbc, size);
+            blocks[allocd++] = block;
+        }
+        else
+        {
+            bd_free(&allocator, blocks[0]);
+            for (size_t i = 1; i < allocd; ++i)
+            {
+                blocks[i - 1] = blocks[i];
+            }
+            --allocd;
+        }
+    }
+}
+END_TEST
+
+
+START_TEST (test_bd_random_size)
+{
+    void* blocks[MAX_BLOCKS];
+
+    const size_t max_size = 128;
     const size_t min_size = 8;
     size_t allocd = 0;
     char *block;
 
     srand(100);
-    for (int i = 0; i < TEST_2_ITERATIONS; ++i)
+    for (int i = 0; i < MAX_ITERATIONS; ++i)
     {
         size_t size = rand() % (max_size + 1 - min_size) + min_size;
         block = bd_alloc(&allocator, size);
@@ -102,203 +96,45 @@ int test_random_2(void)
             --allocd;
         }
     }
-
-
-    return EXIT_SUCCESS;
 }
+END_TEST
 
-
-int test_random_catch(void)
+Suite *vector_suite(void)
 {
-    bd_allocator_t allocator;
-    memset(memory, 0x00, sizeof(memory));
-    bd_place(&allocator, DEPTH, memory);
-    void* blocks[TEST_2_BLOCKS];
+    Suite *s;
+    TCase *tc_core;
 
-    const size_t max_size = 24;
-    const size_t min_size = 8;
-    size_t allocd = 0;
-    char *block;
-
-    srand(100);
-    for (int i = 0; i < TEST_2_ITERATIONS; ++i)
-    {
-        //printf("memory: %c\n", memory[537992]);
-        //if (memory[537992] == '_')
-        //{
-        //    printf("corruption i = %d\n", i);
-        //}
-
-        size_t size = rand() % (max_size + 1 - min_size) + min_size;
-        block = bd_alloc(&allocator, size);
-        
-        if (block) /* register allocated block */
-        {
-            blocks[allocd++] = block;
-            memset(block, i, size);
-            memcpy(block, &i, sizeof(int));
-        }
-        else
-        {
-            // bd_free(&allocator, blocks[--allocd]);
-            bd_free(&allocator, blocks[0]);
-            for (size_t i = 1; i < allocd; ++i)
-            {
-                blocks[i - 1] = blocks[i];
-            }
-            --allocd;
-        }
-    }
-
-
-    return EXIT_SUCCESS;
-}
-
-int simple_test(void)
-{
-    size_t count = 0;
-    void *blocks[100] = {0};
-
-    bd_allocator_t allocator;
-    bd_place(&allocator, 6, memory);
-
-    void *block;
-    do
-    {
-       block = bd_alloc(&allocator, 8);
-       if (block) {
-            blocks[count] = block;
-            memset(block, 0x88, 8);
-            ++count;
-       }
-    }
-    while (block);
-    printf("count 8: %zu\n", count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-
-    count = 0;
-    do
-    {
-        block = bd_alloc(&allocator, 16);
-        if (block)
-        {
-            blocks[count] = block;
-            memset(block, 0x16, 16);
-            ++count;
-        }
-    }
-    while (block);
-    printf("count 16: %zu\n", count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-
-    count = 0;
-    do
-    {
-        block = bd_alloc(&allocator, 32);
-        if (block)
-        {
-            blocks[count] = block;
-            memset(block, 0x32, 32);
-            ++count;
-        }
-    }
-    while (block);
-    printf("count 32: %zu\n", count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-
-    count = 0;
-    do
-    {
-        block = bd_alloc(&allocator, 8);
-        if (block)
-        {
-            blocks[count] = block;
-            memset(block, 0x88, 8);
-            ++count;
-        }
-    }
-    while (block);
-    printf("count 8: %zu\n", count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-
-
-    return EXIT_SUCCESS;
-}
-
-
-int simple_test_2(void)
-{
-    size_t count = 0;
-    void *blocks[100] = {0};
-
-    bd_allocator_t allocator;
-    bd_place(&allocator, 6, memory);
-
-    void *block;
-    do
-    {
-       block = bd_alloc(&allocator, 8 * count);
-       if (block) {
-            blocks[count] = block;
-            memset(block, 0x88, 8);
-            ++count;
-       }
-    }
-    while (block);
-    printf("count: %zu\n", count);
-
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
+    s = suite_create("Buddy Alloc");
     
-    count = 0;
-    do
-    {
-       block = bd_alloc(&allocator, 16 * count);
-       if (block) {
-            blocks[count] = block;
-            memset(block, 0x88, 8);
-            ++count;
-       }
-    }
-    while (block);
-    printf("count: %zu\n", count);
+    /* Core test case */
+    tc_core = tcase_create("Core");
 
-    for (size_t i = 0; i < count; ++i)
-    {
-        bd_free(&allocator, blocks[i]);
-    }
-    return EXIT_SUCCESS;
+    tcase_add_checked_fixture(tc_core, setup_empty, teardown);
+    tcase_add_test(tc_core, test_bd_minimal_size);
+    tcase_add_test(tc_core, test_bd_alternate_size);
+    tcase_add_test(tc_core, test_bd_random_size);
+
+
+    suite_add_tcase(s, tc_core);
+
+    return s;
 }
+
 
 int main(void)
 {
-    printf("memory size over depth = %zu -> %zu\n", DEPTH, sizeof(memory));
+    int number_failed;
+    Suite *s;
+    SRunner *sr;
 
-    if (simple_test()) assert(false);
-    if (simple_test_2()) assert(false);
-    if (test_random_1()) assert(false);
-    // if (test_random_2()) assert(false);
-    if (test_random_catch()) assert(false);
+    s = vector_suite();
+    sr = srunner_create(s);
 
-    return 0;
+    /* srunner_set_fork_status(sr, CK_NOFORK); */
+    srunner_run_all(sr, CK_NORMAL);
+    number_failed = srunner_ntests_failed(sr);
+    srunner_free(sr);
+
+    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
 

@@ -1,0 +1,19 @@
+ACLOCAL_AMFLAGS = -I m4 -I/usr/share/aclocal
+SUBDIRS = .
+
+lib_LTLIBRARIES = libbuddy_alloc.la
+libbuddy_alloc_la_SOURCES = buddy_alloc.c buddy_alloc.h
+libbuddy_alloc_la_LDFLAGS = 
+
+VALGRIND_memcheck_FLAGS = --leak-check=full --track-origins=yes
+@VALGRIND_CHECK_RULES@
+
+TESTS = buddy_alloc_test
+check_PROGRAMS = buddy_alloc_test
+
+buddy_alloc_test_SOURCES = buddy_alloc_test.c $(top_builddir)/buddy_alloc.h
+buddy_alloc_test_CFLAGS = @CHECK_CFLAGS@
+buddy_alloc_test_LDADD = $(top_builddir)/libbuddy_alloc.la @CHECK_LIBS@
+
+debug-test: ./libbuddy_alloc.la ./buddy_alloc_test
+	LD_LIBRARY_PATH=./.libs:/usr/local/lib CK_FORK=no gdb -tui ./.libs/buddy_alloc_test
