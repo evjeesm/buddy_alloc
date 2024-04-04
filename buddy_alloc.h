@@ -18,6 +18,13 @@ bd_allocator_t;
 
 
 /*
+* Helps determine required depth.
+* Since block size affects amount of space wasted by infrastructural needs.
+*/
+size_t calc_worst_case_depth(const size_t req_size);
+
+
+/*
 * Creates allocator on the heap. Arena size will be calculated from
 * MINIMAL_REGION_SIZE * 2^depth.
 */

@@ -99,6 +99,37 @@ START_TEST (test_bd_random_size)
 }
 END_TEST
 
+START_TEST (test_calc_worst_case_depth)
+{
+    const size_t req_size = 100;
+    /* 100 -> 128, 128 * 2 -> 256, 256 / 16 = 16, log2(16) = 4 */
+    const size_t expected_depth = 4;
+    size_t depth = calc_worst_case_depth(req_size);
+    ck_assert_uint_eq(depth, expected_depth);
+}
+END_TEST
+
+
+START_TEST (test_bd_allocd_count)
+{
+    bd_alloc(&allocator, 8);
+    bd_alloc(&allocator, 16);
+    bd_alloc(&allocator, 32);
+    size_t count[3] = {};
+    size_t total_blocks = 0;
+    size_t total_memory = 0;
+
+    bd_allocd_count(&allocator, 2, count, &total_blocks, &total_memory);
+    ck_assert_uint_eq(count[0], 1);
+    ck_assert_uint_eq(count[1], 1);
+    ck_assert_uint_eq(count[2], 1);
+
+    ck_assert_uint_eq(total_blocks, 3);
+    ck_assert_uint_eq(total_memory, 112);
+}
+END_TEST
+
+
 Suite *vector_suite(void)
 {
     Suite *s;
@@ -113,7 +144,8 @@ Suite *vector_suite(void)
     tcase_add_test(tc_core, test_bd_minimal_size);
     tcase_add_test(tc_core, test_bd_alternate_size);
     tcase_add_test(tc_core, test_bd_random_size);
-
+    tcase_add_test(tc_core, test_calc_worst_case_depth);
+    tcase_add_test(tc_core, test_bd_allocd_count);
 
     suite_add_tcase(s, tc_core);
 

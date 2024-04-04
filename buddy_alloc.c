@@ -36,6 +36,13 @@ static bool try_coalesce(bd_region_t *const region);
 static void divide_all(bd_region_t *head);
 
 
+size_t calc_worst_case_depth(const size_t req_size)
+{
+    size_t worst_case_size = align_to_minimal_region(req_size) * 2;
+    return ul_log2(worst_case_size / MINIMAL_REGION_SIZE);
+}
+
+
 bool bd_create(bd_allocator_t *const allocator, const size_t depth)
 {
     assert(allocator);
@@ -140,7 +147,7 @@ void bd_allocd_count(const bd_allocator_t *const allocator, const size_t depth, 
     {
         if (BD_REGION_USED == region->header.state)
         {
-            size_t block_depth = ul_log2(region->header.size);
+            size_t block_depth = ul_log2(region->header.size/MINIMAL_REGION_SIZE);
             ++count_arr[block_depth];
             ++(*total_blocks);
             *total_memory += region->header.size;
