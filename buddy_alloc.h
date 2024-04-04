@@ -19,7 +19,7 @@ bd_allocator_t;
 
 /*
 * Creates allocator on the heap. Arena size will be calculated from
-* MINIMAL_REGION_SIZE in power of depth argument.
+* MINIMAL_REGION_SIZE * 2^depth.
 */
 bool bd_create(bd_allocator_t *const allocator, const size_t depth);
 
@@ -32,7 +32,8 @@ void bd_destroy(bd_allocator_t *const allocator);
 
 /*
 * Create allocator using external memory pool.
-* Size of the memory region has to be at least MINIMAL_REGION_SIZE ^ depth large.
+* Size of the memory region has to be at least MINIMAL_REGION_SIZE * 2^depth large.
+* Note: allocator does not occupy space inside memory buffer.
 */
 void bd_place(bd_allocator_t *const allocator, const size_t depth, void *memory);
 

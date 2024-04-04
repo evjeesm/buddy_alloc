@@ -1,7 +1,7 @@
 #include "buddy_alloc.h"
 
 #include <assert.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 
 typedef enum bd_region_state_t
@@ -34,6 +34,27 @@ static size_t ul_log2(size_t size);
 static void divide_region(bd_region_t *const region);
 static bool try_coalesce(bd_region_t *const region);
 static void divide_all(bd_region_t *head);
+
+
+bool bd_create(bd_allocator_t *const allocator, const size_t depth)
+{
+    assert(allocator);
+
+    void *memory = (void*)malloc(MINIMAL_REGION_SIZE << depth);
+    if (!memory) return false;
+
+    bd_place(allocator, depth, memory);
+    return true;
+}
+
+
+void bd_destroy(bd_allocator_t *const allocator)
+{
+    assert(allocator);
+    assert(allocator->head);
+
+    free(allocator->head);
+}
 
 
 void bd_place(bd_allocator_t *allocator, size_t depth, void *memory)
