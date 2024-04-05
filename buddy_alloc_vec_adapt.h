@@ -1,0 +1,9 @@
+#ifndef _BUDDY_ALLOC_VEC_ADAPT_H_
+#define _BUDDY_ALLOC_VEC_ADAPT_H_
+
+#ifndef BD_ARENA_SIZE
+    #define BD_ARENA_SIZE 4*1024*1024 /* 4MB */
+#endif/*BD_REQ_SIZE*/
+
+#endif/*_BUDDY_ALLOC_VEC_ADAPT_H_*/
+

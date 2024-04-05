@@ -1,9 +1,15 @@
 ACLOCAL_AMFLAGS = -I m4 -I/usr/share/aclocal
-SUBDIRS = .
+SUBDIRS = vector .
+
+lib_LIBRARIES = libbuddy_alloc_vec_adapt.a
+libbuddy_alloc_vec_adapt_a_SOURCES = buddy_alloc_vec_adapt.c buddy_alloc_vec_adapt.h
+
 
 lib_LTLIBRARIES = libbuddy_alloc.la
 libbuddy_alloc_la_SOURCES = buddy_alloc.c buddy_alloc.h
 libbuddy_alloc_la_LDFLAGS = 
+
+
 
 VALGRIND_memcheck_FLAGS = --leak-check=full --track-origins=yes
 @VALGRIND_CHECK_RULES@

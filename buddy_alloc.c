@@ -1,32 +1,9 @@
 #include "buddy_alloc.h"
+#include "bd_region.h"
 
 #include <assert.h>
 #include <stdlib.h>
-
-
-typedef enum bd_region_state_t
-{
-    BD_REGION_FREE = 0,
-    BD_REGION_USED
-}
-bd_region_state_t;
-
-
-typedef struct bd_header_t
-{
-    uint8_t state;
-    uint8_t reserved[3];
-    uint32_t size;
-}
-bd_header_t;
-
-
-struct bd_region_t
-{
-    bd_header_t header;
-    char memory[];
-};
-
+#include <string.h>
 
 static size_t align_to_minimal_region(const size_t size);
 static size_t ceiled_pow2(const size_t size);
@@ -117,6 +94,37 @@ void* bd_alloc(const bd_allocator_t *const allocator, const size_t req_size)
     }
 
     return NULL; /* required region not found */
+}
+
+
+void *bd_realloc(const bd_allocator_t *const allocator, void *const ptr, const size_t req_size)
+{
+    assert(allocator);
+    assert(ptr);
+    assert(ptr < (void*)((char*)allocator->head + allocator->arena_size));
+
+    bd_region_t *region = (bd_region_t*)((char*)ptr - offsetof(bd_region_t, memory));
+    assert((region->header.state == BD_REGION_USED) && "realloc of freed block");
+
+    const size_t aligned_size = align_to_minimal_region(req_size + sizeof(bd_header_t));
+    if (region->header.size >= aligned_size) return ptr;
+
+    /*
+     * TODO:
+     * algorithm not checks if current block can be scaled.
+     * this requires changing of try_coalesce, so it will perform prospections first.
+     */
+    void *other = bd_alloc(allocator, req_size);
+    if (!other) return NULL;
+
+    const size_t size_to_copy = region->header.size > aligned_size
+            ? aligned_size
+            : region->header.size;
+
+    memcpy(other, ptr, size_to_copy);
+    bd_free(allocator, ptr);
+
+    return other;
 }
 
 

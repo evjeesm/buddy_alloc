@@ -52,6 +52,12 @@ void *bd_alloc(const bd_allocator_t *const allocator, const size_t req_size);
 
 
 /*
+* Reallocate block to required size.
+*/
+void *bd_realloc(const bd_allocator_t *const allocator, void *const ptr, const size_t req_size);
+
+
+/*
 * Free previously allocated block.
 */
 void bd_free(const bd_allocator_t *const allocator, void *const ptr);
