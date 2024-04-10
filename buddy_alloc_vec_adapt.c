@@ -34,9 +34,7 @@ void *vector_alloc(const size_t alloc_size)
 
 void *vector_realloc(void *ptr, const size_t alloc_size)
 {
-    void *other = bd_realloc(&g_arena.allocator, ptr, alloc_size);
-    if (!other) return NULL;
-    return other;
+    return bd_realloc(&g_arena.allocator, ptr, alloc_size);
 }
 
 
