@@ -9,7 +9,8 @@ static size_t align_to_minimal_region(const size_t size);
 static size_t ceiled_pow2(const size_t size);
 static size_t ul_log2(size_t size);
 static void divide_region(bd_region_t *const region);
-static bool try_coalesce(bd_region_t *const region);
+static bool try_coalesce(bd_region_t *const region, const size_t req_size);
+static bool coalesce_check(const bd_region_t *start, const size_t req_size);
 static void divide_all(bd_region_t *head);
 
 
@@ -75,7 +76,7 @@ void* bd_alloc(const bd_allocator_t *const allocator, const size_t req_size)
         if (aligned_size > region->header.size) /* smaller block */
         {
             /* try coalesce */
-            if (!try_coalesce(region))
+            if (!try_coalesce(region, aligned_size))
             {
                 /* skip block */
                 region = (bd_region_t*)((char*) region + region->header.size);
@@ -109,11 +110,14 @@ void *bd_realloc(const bd_allocator_t *const allocator, void *const ptr, const s
     const size_t aligned_size = align_to_minimal_region(req_size + sizeof(bd_header_t));
     if (region->header.size >= aligned_size) return ptr;
 
-    /*
-     * TODO:
-     * algorithm not checks if current block can be scaled.
-     * this requires changing of try_coalesce, so it will perform prospections first.
-     */
+    /* check if current block can be extended without relocation */
+    bd_region_t *next = (bd_region_t*) ((char*)region + region->header.size);
+    if (coalesce_check(next, aligned_size - region->header.size))
+    {
+        region->header.size = aligned_size;
+        return ptr;
+    }
+
     void *other = bd_alloc(allocator, req_size);
     if (!other) return NULL;
 
@@ -218,7 +222,24 @@ static void divide_region(bd_region_t *const region)
 }
 
 
-static bool try_coalesce(bd_region_t *const region)
+static bool coalesce_check(const bd_region_t *start, const size_t aligned_size)
+{
+    const char *end = (char*) start + aligned_size;
+
+    while ((char*)start < end)
+    {
+        if (BD_REGION_USED == start->header.state)
+        {
+            return false;
+        }
+        start = (bd_region_t*) ((char*)start + start->header.size);
+    }
+
+    return true;
+}
+
+
+static bool try_coalesce(bd_region_t *const region, const size_t req_size)
 {
     bd_region_t *next = (bd_region_t*) ((char*)region + region->header.size);
 
@@ -227,24 +248,12 @@ static bool try_coalesce(bd_region_t *const region)
     assert(next->header.size > 0);
     assert(next->header.size <= region->header.size);
 
-    if (BD_REGION_USED == next->header.state)
+    if (!coalesce_check(next, req_size - region->header.size))
     {
         return false;
     }
 
-    /* attempt merging next blocks up to the size of a region */
-    while (next->header.size < region->header.size)
-    {
-        if (!try_coalesce(next))
-        {
-            return false;
-        }
-    }
-
-    assert(next->header.size == region->header.size);
-    
-    /* next aligned with region */
-    region->header.size <<= 1;
+    region->header.size = req_size;
     return true;
 }
 
