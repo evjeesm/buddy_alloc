@@ -25,19 +25,6 @@ size_t calc_worst_case_depth(const size_t req_size);
 
 
 /*
-* Creates allocator on the heap. Arena size will be calculated from
-* MINIMAL_REGION_SIZE * 2^depth.
-*/
-bool bd_create(bd_allocator_t *const allocator, const size_t depth);
-
-
-/*
-* Destroy allocator on the heap.
-*/
-void bd_destroy(bd_allocator_t *const allocator);
-
-
-/*
 * Create allocator using external memory pool.
 * Size of the memory region has to be at least MINIMAL_REGION_SIZE * 2^depth large.
 * Note: allocator does not occupy space inside memory buffer.

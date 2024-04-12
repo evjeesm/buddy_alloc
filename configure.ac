@@ -29,7 +29,7 @@ AC_PROG_CXX
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.6])
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdint.h stddef.h stdlib.h])
+AC_CHECK_HEADERS([stdint.h stddef.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -39,9 +39,7 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([memset, memcpy])
 
 # Output files 
 AC_CONFIG_HEADERS([config.h])

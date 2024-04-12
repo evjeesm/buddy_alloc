@@ -2,7 +2,6 @@
 #include "bd_region.h"
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 static size_t align_to_minimal_region(const size_t size);
@@ -18,27 +17,6 @@ size_t calc_worst_case_depth(const size_t req_size)
 {
     size_t worst_case_size = align_to_minimal_region(req_size) * 2;
     return ul_log2(worst_case_size / MINIMAL_REGION_SIZE);
-}
-
-
-bool bd_create(bd_allocator_t *const allocator, const size_t depth)
-{
-    assert(allocator);
-
-    void *memory = (void*)malloc(MINIMAL_REGION_SIZE << depth);
-    if (!memory) return false;
-
-    bd_place(allocator, depth, memory);
-    return true;
-}
-
-
-void bd_destroy(bd_allocator_t *const allocator)
-{
-    assert(allocator);
-    assert(allocator->head);
-
-    free(allocator->head);
 }
 
 
