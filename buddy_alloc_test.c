@@ -12,7 +12,8 @@ static bd_allocator_t allocator;
 
 static void setup_empty(void)
 {
-    bd_place(&allocator, DEPTH, memory);
+    bd_place(&allocator, MINIMAL_REGION_SIZE << DEPTH, memory);
+    ck_assert_uint_eq(allocator.arena_size, MINIMAL_REGION_SIZE << DEPTH);
 }
 
 static void teardown(void)
@@ -99,13 +100,13 @@ START_TEST (test_bd_random_size)
 }
 END_TEST
 
-START_TEST (test_calc_worst_case_depth)
+
+START_TEST (test_bd_worst_case_alloc_size)
 {
     const size_t req_size = 100;
-    /* 100 -> 128, 128 * 2 -> 256, 256 / 16 = 16, log2(16) = 4 */
-    const size_t expected_depth = 4;
-    size_t depth = calc_worst_case_depth(req_size);
-    ck_assert_uint_eq(depth, expected_depth);
+    const size_t expected_alloc_size = 256;
+    size_t alloc_size = bd_worst_case_alloc_size(req_size);
+    ck_assert_uint_eq(expected_alloc_size, alloc_size);
 }
 END_TEST
 
@@ -144,7 +145,7 @@ Suite *vector_suite(void)
     tcase_add_test(tc_core, test_bd_minimal_size);
     tcase_add_test(tc_core, test_bd_alternate_size);
     tcase_add_test(tc_core, test_bd_random_size);
-    tcase_add_test(tc_core, test_calc_worst_case_depth);
+    tcase_add_test(tc_core, test_bd_worst_case_alloc_size);
     tcase_add_test(tc_core, test_bd_allocd_count);
 
     suite_add_tcase(s, tc_core);

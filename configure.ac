@@ -37,6 +37,7 @@ AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
+AC_FUNC_MALLOC
 
 # Checks for library functions.
 AC_CHECK_FUNCS([memset, memcpy])
@@ -44,5 +45,5 @@ AC_CHECK_FUNCS([memset, memcpy])
 # Output files 
 AC_CONFIG_HEADERS([config.h])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile examples/Makefile])
 AC_OUTPUT

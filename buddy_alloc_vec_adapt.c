@@ -2,28 +2,10 @@
 #include "buddy_alloc.h"
 #include "bd_region.h"
 
-typedef struct arena_t
-{
-    bd_allocator_t allocator;
-    union {
-        char arena[BD_ARENA_SIZE];
-        bd_region_t head;
-    };
-}
-arena_t;
-
-
-static arena_t g_arena = {
-    .allocator = {
-        .arena_size = BD_ARENA_SIZE,
-        .head = &g_arena.head
-    },
-    .head = {
-        .header = {
-            .size = BD_ARENA_SIZE
-        }
-    }
-};
+/*
+* Preparing global arena storage
+*/
+BD_STATIC_ARENA(g_arena, BD_ARENA_SIZE);
 
 
 void *vector_alloc(const size_t alloc_size)

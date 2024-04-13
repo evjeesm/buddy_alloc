@@ -16,20 +16,49 @@ typedef struct
 }
 bd_allocator_t;
 
+#define BD_STATIC_ARENA(name, ARENA_SZ) \
+    struct { \
+        bd_allocator_t allocator; \
+        union { \
+            char arena[ARENA_SZ]; \
+            bd_region_t head; \
+        }; \
+    } \
+    static name = { \
+        .allocator = { \
+            .arena_size = ARENA_SZ, \
+            .head = &name.head \
+        }, \
+        .head = { \
+            .header = { \
+                .size = ARENA_SZ \
+            } \
+        } \
+    }
 
 /*
-* Helps determine required depth.
-* Since block size affects amount of space wasted by infrastructural needs.
+* Requires twice as match memory to fill a whole arena
+* with smallest blocks with total usable memory equal to `req_size`.
 */
-size_t calc_worst_case_depth(const size_t req_size);
+size_t bd_worst_case_alloc_size(const size_t req_size);
+
+
+/*
+* Calculates amount of memory for the allocation 
+* that guaranties to fit `block_count` blocks of `block_size`.
+*/
+size_t bd_alloc_size_for(const size_t block_size, const size_t block_count);
 
 
 /*
 * Create allocator using external memory pool.
-* Size of the memory region has to be at least MINIMAL_REGION_SIZE * 2^depth large.
+* Fits allocator into provided memory buffer.
+* The size better be equal to power of 2 in ideal
+* and to be multiple of MINIMAL_REGION_SIZE in order to minimize memory waste.
+*
 * Note: allocator does not occupy space inside memory buffer.
 */
-void bd_place(bd_allocator_t *const allocator, const size_t depth, void *memory);
+void bd_place(bd_allocator_t *const allocator, const size_t size, char memory[const size]);
 
 
 /*

@@ -1,22 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4 -I/usr/share/aclocal
-SUBDIRS = vector/src vector .
+SUBDIRS = vector/src vector . examples
 
 lib_LTLIBRARIES = libbuddy_alloc.la libbuddy_alloc_vec_adapt.la
 libbuddy_alloc_la_SOURCES = buddy_alloc.c buddy_alloc.h
 libbuddy_alloc_la_LDFLAGS = -static
 libbuddy_alloc_vec_adapt_la_SOURCES = buddy_alloc_vec_adapt.c buddy_alloc_vec_adapt.h
 libbuddy_alloc_vec_adapt_la_LDFLAGS = -static
-
-bin_PROGRAMS = adapter_demo
-adapter_demo_SOURCES = adapter_demo.c vector.h
-adapter_demo_CFLAGS = -g -Ivector/src
-adapter_demo_LDFLAGS = 
-adapter_demo_LDADD = adapted_vector_r.o libbuddy_alloc.la
-EXTRA_adapter_demo_DEPENDENCIES = vector/src/libvector_static.la adapted_vector_r.o
-
-# making partialy linked object in order to convince vector to interface with adapter.
-adapted_vector_r.o: libbuddy_alloc_vec_adapt.la
-	ld -L. -L.libs -Lvector/src/.libs -r --whole-archive -lvector_static -lbuddy_alloc_vec_adapt -o $@
 
 VALGRIND_memcheck_FLAGS = --leak-check=full --track-origins=yes
 @VALGRIND_CHECK_RULES@
