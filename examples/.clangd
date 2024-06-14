@@ -1,0 +1,7 @@
+CompileFlags:
+  Add: [
+    -I..,
+    -I../vector/src,
+    -D_DEFAULT_SOURCE, # MAP_ANONYMOUS
+  ]
+---

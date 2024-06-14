@@ -8,5 +8,7 @@
 !*.sh
 
 !.gitignore
+!.clangd
+!examples
 
 config.h
