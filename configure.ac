@@ -14,10 +14,12 @@ AX_VALGRIND_DFLT([sgcheck], [off])
 AX_VALGRIND_DFLT([drd], [off])
 AX_VALGRIND_CHECK
 
+AX_SYS_WEAK_ALIAS
+
 # unique source file -- primitive safety check
 AC_CONFIG_SRCDIR([buddy_alloc.c])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.11.2])
+AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign 1.11.2])
 
 # Checks for programs.
 AM_PROG_AR
