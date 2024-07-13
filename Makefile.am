@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4 -I/usr/share/aclocal
-SUBDIRS = vector/src vector . examples
+SUBDIRS = vector . examples
 
 lib_LTLIBRARIES = libbuddy_alloc.la libbuddy_alloc_vec_adapt.la
 libbuddy_alloc_la_SOURCES = buddy_alloc.c buddy_alloc.h

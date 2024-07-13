@@ -5,6 +5,7 @@ AC_PREREQ([2.69])
 AC_CONFIG_MACRO_DIRS([m4 /usr/share/aclocal])
 AC_INIT([BuddyAlloc], [1.0], [https://github.com/JekasObps])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_SUBDIRS(vector)
 
 # valgrind
 AX_VALGRIND_DFLT([memcheck], [on])

@@ -1,26 +1,21 @@
-#include "buddy_alloc_vec_adapt.h"
 #include "buddy_alloc.h"
-#include "bd_region.h"
 
-/*
-* Preparing global arena storage
-*/
-BD_STATIC_ARENA(g_arena, BD_ARENA_SIZE);
-
-
-void *vector_alloc(const size_t alloc_size)
+void *vector_alloc(const size_t alloc_size, void *const param)
 {
-    return bd_alloc(&g_arena.allocator, alloc_size);
+    bd_allocator_t *allocator = param;
+    return bd_alloc(allocator, alloc_size);
 }
 
 
-void *vector_realloc(void *ptr, const size_t alloc_size)
+void *vector_realloc(void *ptr, const size_t alloc_size, void *const param)
 {
-    return bd_realloc(&g_arena.allocator, ptr, alloc_size);
+    bd_allocator_t *allocator = param;
+    return bd_realloc(allocator, ptr, alloc_size);
 }
 
 
-void vector_free(void *ptr)
+void vector_free(void *ptr, void *const param)
 {
-    bd_free(&g_arena.allocator, ptr);
+    bd_allocator_t *allocator = param;
+    bd_free(allocator, ptr);
 }

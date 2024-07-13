@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #define MINIMAL_REGION_SIZE 16
 
@@ -15,26 +14,6 @@ typedef struct
     bd_region_t* head;
 }
 bd_allocator_t;
-
-#define BD_STATIC_ARENA(name, ARENA_SZ) \
-    struct { \
-        bd_allocator_t allocator; \
-        union { \
-            char arena[ARENA_SZ]; \
-            bd_region_t head; \
-        }; \
-    } \
-    static name = { \
-        .allocator = { \
-            .arena_size = ARENA_SZ, \
-            .head = &name.head \
-        }, \
-        .head = { \
-            .header = { \
-                .size = ARENA_SZ \
-            } \
-        } \
-    }
 
 /*
 * Requires twice as match memory to fill a whole arena
