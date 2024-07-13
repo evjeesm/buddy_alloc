@@ -3,7 +3,7 @@ SUBDIRS = vector . examples
 lib_LTLIBRARIES = libbuddy_alloc.la libbuddy_alloc_vec_adapt.la
 libbuddy_alloc_la_SOURCES = buddy_alloc.c buddy_alloc.h
 libbuddy_alloc_la_LDFLAGS = -static
-libbuddy_alloc_vec_adapt_la_SOURCES = buddy_alloc_vec_adapt.c buddy_alloc_vec_adapt.h
+libbuddy_alloc_vec_adapt_la_SOURCES = buddy_alloc_vec_adapt.c
 
 VALGRIND_memcheck_FLAGS = --leak-check=full --track-origins=yes
 @VALGRIND_CHECK_RULES@
