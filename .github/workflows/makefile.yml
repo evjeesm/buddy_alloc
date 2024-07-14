@@ -44,7 +44,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: check-logs
-        path: tests/*.log
+        path: ^test-*.log
         retention-days: 5
 
     - name: Run distcheck
