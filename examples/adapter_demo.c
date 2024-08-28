@@ -1,3 +1,4 @@
+#include "buddy_alloc.h"
 #include "vector.h"
 
 /* you can set you desired size via macro */
@@ -8,9 +9,13 @@
 
 int main(void)
 {
-    vector_t *vec = vector_create(
-            .element_size=sizeof(int),
-            .alloc_param = bd_get_static_allocator());
+    vector_t *vec = vector_create (
+        .element_size=sizeof(int),
+        .alloc_opts = alloc_opts (
+            .size = sizeof(bd_allocator_t),
+            .data = bd_get_static_allocator(),
+        ),
+    );
 
     vector_set(vec, 0, TMP_REF(int, 100));
 
